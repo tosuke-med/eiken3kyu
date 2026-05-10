@@ -33,6 +33,7 @@ eiken3-quiz/
 │   ├── quiz_sort_006-010.html
 │   └── quiz_random.html           # masterから毎回ランダム出題する版
 │
+├── index.html                     # GitHub Pages トップ（もくじページ）
 └── README.md
 ```
 
@@ -222,6 +223,61 @@ const ALL_QUESTIONS = [
 - **英検の過去問の流用禁止。** 文・文脈はすべてオリジナルで作成する
 - 「英検3級レベル相当」という難易度の目安表現はOK
 - `jp_hint` はひらがなを基本とする（小学生以下が読める水準）
+
+---
+
+## GitHub Pages での公開
+
+rootを公開対象に設定する（Settings → Pages → Source: Deploy from a branch → branch: main / folder: /root）。
+
+```
+https://{username}.github.io/{repository}/              # index.html（もくじ）
+https://{username}.github.io/{repository}/published/quiz_sort_001-005.html
+https://{username}.github.io/{repository}/published/quiz_random.html
+```
+
+---
+
+## index.html（もくじページ）
+
+`index.html` はリポジトリのトップに置くもくじページ。GitHub Pages のトップ（`/`）として機能する。
+quiz_3kyuu_template.html と同じく **「データ部分だけ編集する」** 構造になっている。
+
+### 編集箇所
+
+`index.html` 冒頭の `quizzes` 配列にオブジェクトを追加するだけでカードが増える。
+
+```javascript
+const quizzes = [
+  {
+    title: "ならびかえ vol.1（名詞トピック）",
+    type: "sort",       // "sort" / "choice" / "mix"
+    cat: "ならびかえ",
+    count: 5,
+    file: "published/quiz_sort_001-005.html"
+  },
+  {
+    title: "どうし 4たく vol.1",
+    type: "choice",
+    cat: "動詞",
+    count: 5,
+    file: "published/quiz_v_001-005.html"
+  },
+];
+```
+
+### LLMへの追記指示テンプレ
+
+新しいセットを追加したあと、index.html の更新も一緒に依頼する。
+
+```
+index.html の quizzes 配列に追記する差分を出して。
+title: "どうし 4たく vol.1"
+type: choice
+cat: 動詞
+count: 5
+file: published/quiz_v_001-005.html
+```
 
 ---
 
