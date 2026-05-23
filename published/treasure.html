@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>たからばこ</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Hiragino Kundo ProN', 'Hiragino Sans', sans-serif;
+    background: linear-gradient(135deg, #fff9f0 0%, #fef3c7 100%);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: white; border-radius: 24px; padding: 32px 28px;
+    max-width: 460px; width: 100%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.10);
+    text-align: center;
+  }
+  .page-icon { font-size: 64px; margin-bottom: 12px; }
+  .page-title {
+    font-size: 22px; font-weight: bold; color: #1f2937;
+    margin-bottom: 8px;
+  }
+  .page-desc {
+    font-size: 14px; color: #6b7280; margin-bottom: 28px; line-height: 1.7;
+  }
+
+  /* 入力エリア */
+  .input-section { margin-bottom: 24px; }
+  .input-label {
+    font-size: 13px; color: #374151; font-weight: bold;
+    margin-bottom: 12px; display: block;
+  }
+  .char-inputs {
+    display: flex; gap: 8px; justify-content: center; margin-bottom: 16px;
+  }
+  .char-box {
+    width: 52px; height: 64px;
+    border: 2px solid #d1d5db; border-radius: 14px;
+    font-size: 28px; font-weight: bold; color: #1f2937;
+    text-align: center;
+    background: #f9fafb;
+    transition: border-color 0.2s, background 0.2s;
+    outline: none;
+    caret-color: #6366f1;
+  }
+  .char-box:focus {
+    border-color: #6366f1; background: #f5f3ff;
+  }
+  .char-box.filled { border-color: #a78bfa; background: #ede9fe; }
+  .char-box.correct-char { border-color: #22c55e; background: #dcfce7; }
+  .char-box.wrong-char { border-color: #ef4444; background: #fee2e2; }
+
+  .open-btn {
+    width: 100%; padding: 14px; background: #f59e0b; color: white;
+    border: none; border-radius: 16px; font-size: 17px; font-weight: bold;
+    cursor: pointer; transition: background 0.2s, transform 0.1s;
+    box-shadow: 0 4px 0 #d97706;
+  }
+  .open-btn:hover { background: #d97706; }
+  .open-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #b45309; }
+
+  /* ヒント */
+  .hint-section { margin-bottom: 24px; }
+  .hint-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;
+    margin-top: 12px;
+  }
+  .hint-card {
+    border: 2px dashed #e5e7eb; border-radius: 12px;
+    padding: 10px 4px;
+    background: #f9fafb;
+  }
+  .hint-vol {
+    font-size: 10px; color: #9ca3af; font-weight: bold; margin-bottom: 4px;
+  }
+  .hint-char-slot {
+    font-size: 24px; color: #d1d5db; font-weight: bold; min-height: 32px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .hint-char-slot.revealed { color: #b45309; }
+
+  /* エラーメッセージ */
+  .error-msg {
+    font-size: 14px; color: #ef4444; font-weight: bold;
+    margin: 12px 0; min-height: 20px;
+  }
+
+  /* 宝箱オープン演出 */
+  .treasure-open { display: none; }
+  .treasure-anim { font-size: 80px; margin-bottom: 16px; animation: bounce 0.6s ease infinite alternate; }
+  @keyframes bounce {
+    from { transform: translateY(0); }
+    to   { transform: translateY(-12px); }
+  }
+  .congrats-title {
+    font-size: 22px; font-weight: bold; color: #b45309;
+    margin-bottom: 16px; line-height: 1.5;
+  }
+  .congrats-msg {
+    font-size: 15px; color: #374151; line-height: 1.8;
+    background: #fef3c7; border-radius: 14px; padding: 18px;
+    border: 2px solid #fde68a; margin-bottom: 20px;
+  }
+  .confetti-row { font-size: 28px; margin-bottom: 16px; }
+  .back-btn {
+    padding: 12px 24px; background: #6366f1; color: white;
+    border: none; border-radius: 14px; font-size: 14px; font-weight: bold;
+    cursor: pointer; text-decoration: none; display: inline-block;
+  }
+  .back-btn:hover { background: #4f46e5; }
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <!-- 入力フォーム -->
+  <div id="formSection">
+    <div class="page-icon">🎁</div>
+    <div class="page-title">たからばこを ひらこう！</div>
+    <div class="page-desc">
+      vol.1〜5を ぜんもんせいかいすると<br>
+      あんごうのもじが 1もじずつ もらえるよ。<br>
+      5もじを あつめて いれてみよう！
+    </div>
+
+    <!-- ヒント枠 -->
+    <div class="hint-section">
+      <div style="font-size:12px; color:#9ca3af; font-weight:bold; margin-bottom:8px;">あんごうのもじ</div>
+      <div class="hint-grid">
+        <div class="hint-card">
+          <div class="hint-vol">vol.1</div>
+          <div class="hint-char-slot">？</div>
+        </div>
+        <div class="hint-card">
+          <div class="hint-vol">vol.2</div>
+          <div class="hint-char-slot">？</div>
+        </div>
+        <div class="hint-card">
+          <div class="hint-vol">vol.3</div>
+          <div class="hint-char-slot">？</div>
+        </div>
+        <div class="hint-card">
+          <div class="hint-vol">vol.4</div>
+          <div class="hint-char-slot">？</div>
+        </div>
+        <div class="hint-card">
+          <div class="hint-vol">vol.5</div>
+          <div class="hint-char-slot">？</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 入力ボックス -->
+    <div class="input-section">
+      <span class="input-label">5もじの あんごうを いれてね</span>
+      <div class="char-inputs">
+        <input class="char-box" id="c0" type="text" maxlength="1" inputmode="text" autocomplete="off">
+        <input class="char-box" id="c1" type="text" maxlength="1" inputmode="text" autocomplete="off">
+        <input class="char-box" id="c2" type="text" maxlength="1" inputmode="text" autocomplete="off">
+        <input class="char-box" id="c3" type="text" maxlength="1" inputmode="text" autocomplete="off">
+        <input class="char-box" id="c4" type="text" maxlength="1" inputmode="text" autocomplete="off">
+      </div>
+      <div class="error-msg" id="errorMsg"></div>
+      <button class="open-btn" onclick="tryOpen()">🔓 たからばこを あける！</button>
+    </div>
+
+    <div style="margin-top:16px;">
+      <a href="../index.html" style="font-size:13px; color:#9ca3af;">← もどる</a>
+    </div>
+  </div>
+
+  <!-- 宝箱オープン -->
+  <div class="treasure-open" id="openSection">
+    <div class="confetti-row">🎊🎉🎊🎉🎊</div>
+    <div class="treasure-anim">🎁</div>
+    <div class="congrats-title">やったー！<br>たからばこが ひらいた！</div>
+    <div class="congrats-msg">
+      ぜんもんせいかい おめでとう！<br>
+      すてきな プレゼントを ゲット！<br>
+      この がめんを おやに みせてね
+    </div>
+    <div class="confetti-row">⭐🌟⭐🌟⭐</div>
+    <button class="back-btn" onclick="reset()">もういちどやってみる</button>
+  </div>
+
+</div>
+
+<script>
+const ANSWER = "たからもの";
+const inputs = [
+  document.getElementById('c0'),
+  document.getElementById('c1'),
+  document.getElementById('c2'),
+  document.getElementById('c3'),
+  document.getElementById('c4')
+];
+
+inputs.forEach((inp, i) => {
+  inp.addEventListener('input', () => {
+    const v = inp.value;
+    inp.classList.toggle('filled', v.length > 0);
+    document.getElementById('errorMsg').textContent = '';
+    if (v.length === 1 && i < 4) inputs[i + 1].focus();
+  });
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Backspace' && inp.value === '' && i > 0) {
+      inputs[i - 1].focus();
+      inputs[i - 1].value = '';
+      inputs[i - 1].classList.remove('filled');
+    }
+  });
+  inp.addEventListener('paste', e => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text').trim();
+    [...text].slice(0, 5).forEach((ch, j) => {
+      if (inputs[i + j]) {
+        inputs[i + j].value = ch;
+        inputs[i + j].classList.add('filled');
+      }
+    });
+  });
+});
+
+function getEnteredWord() {
+  return inputs.map(inp => inp.value).join('');
+}
+
+function tryOpen() {
+  const word = getEnteredWord();
+  if (word.length < 5) {
+    shake();
+    document.getElementById('errorMsg').textContent = '5もじ ぜんぶ いれてね！';
+    return;
+  }
+  if (word === ANSWER) {
+    inputs.forEach(inp => inp.classList.add('correct-char'));
+    setTimeout(() => {
+      document.getElementById('formSection').style.display = 'none';
+      const openSec = document.getElementById('openSection');
+      openSec.style.display = 'block';
+    }, 500);
+  } else {
+    inputs.forEach(inp => inp.classList.add('wrong-char'));
+    shake();
+    document.getElementById('errorMsg').textContent = 'ちがうよ！もういちど かくにんしてね';
+    setTimeout(() => {
+      inputs.forEach(inp => inp.classList.remove('wrong-char'));
+    }, 800);
+  }
+}
+
+function shake() {
+  const card = document.querySelector('.card');
+  card.style.animation = 'none';
+  card.offsetHeight;
+  card.style.animation = 'shake 0.4s ease';
+}
+
+function reset() {
+  inputs.forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('filled', 'correct-char', 'wrong-char');
+  });
+  document.getElementById('errorMsg').textContent = '';
+  document.getElementById('formSection').style.display = 'block';
+  document.getElementById('openSection').style.display = 'none';
+  inputs[0].focus();
+}
+
+document.querySelector('.card').style.cssText += '';
+const style = document.createElement('style');
+style.textContent = '@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }';
+document.head.appendChild(style);
+</script>
+
+</body>
+</html>
